@@ -1,6 +1,6 @@
 import { ChakraProvider } from "@chakra-ui/react";
 import LandingPage from "./pages/LandingPage";
-import "./styles/index.css";
+import '../src/index.css'
 
 function App() {
   return (
