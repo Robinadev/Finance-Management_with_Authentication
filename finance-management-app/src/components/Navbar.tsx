@@ -1,20 +1,30 @@
-// filepath: /c:/Users/user/Desktop/Finance Management with Authentication/finance-management-app/src/components/Navbar.tsx
-import { Box, Button, Flex, Heading, Spacer } from "@chakra-ui/react";
+import { Link } from 'react-router-dom';
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
   return (
-    <Flex as="nav" padding="1.5rem" bg="teal.500" color="white">
-      <Heading as="h1" size="lg">
-        Finance Management
-      </Heading>
-      <Spacer />
-      <Button variant="outline" mr="4">
-        Login
-      </Button>
-      <Button variant="solid" colorScheme="teal">
-        Sign Up
-      </Button>
-    </Flex>
+    <nav className="sticky top-0 z-50 bg-teal-600 text-white shadow-md">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between py-4">
+          <Link to="/" className="text-2xl font-bold">
+            Finance Management
+          </Link>
+          <div className="flex items-center space-x-4">
+            <Link 
+              to="/login"
+              className="px-4 py-2 rounded-md hover:bg-teal-700 transition-colors duration-200"
+            >
+              Login
+            </Link>
+            <Link 
+              to="/signup"
+              className="px-4 py-2 bg-white text-teal-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 

@@ -1,15 +1,15 @@
-// filepath: /c:/Users/user/Desktop/Finance Management with Authentication/finance-management-app/src/pages/LandingPage.tsx
-import React from "react";
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
 import CallToAction from "../components/CallToAction";
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <HeroSection />
-      <CallToAction />
+      <main className="flex-1">
+        <HeroSection />
+        <CallToAction />
+      </main>
     </div>
   );
 };

@@ -1,12 +1,10 @@
-// filepath: /c:/Users/user/Desktop/Finance Management with Authentication/finance-management-app/src/main.tsx
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
-import './styles/index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './styles/index.css'
 
-ReactDOM.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-  document.getElementById('root')
-);
+)
