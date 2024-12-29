@@ -26,23 +26,40 @@ const SignUpPage = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const validatePassword = (password: string): { isValid: boolean; message: string } => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[@$!%*?&]/.test(password);
+
+    if (password.length < minLength) {
+      return { isValid: false, message: 'Password must be at least 8 characters long' };
+    }
+    if (!hasUpperCase) {
+      return { isValid: false, message: 'Password must contain at least one uppercase letter' };
+    }
+    if (!hasLowerCase) {
+      return { isValid: false, message: 'Password must contain at least one lowercase letter' };
+    }
+    if (!hasNumbers) {
+      return { isValid: false, message: 'Password must contain at least one number' };
+    }
+    if (!hasSpecialChar) {
+      return { isValid: false, message: 'Password must contain at least one special character (@$!%*?&)' };
+    }
+
+    return { isValid: true, message: '' };
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    }
+    // ... existing username and email validation ...
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      newErrors.password = passwordValidation.message;
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -59,36 +76,63 @@ const SignUpPage = () => {
     if (!validateForm()) return;
   
     setIsLoading(true);
-    setErrors({}); // Clear previous errors
+    setErrors({});
   
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('http://localhost:3000/api/auth/signup', { // Add full URL
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
+          username: formData.username.trim(),
+          email: formData.email.toLowerCase().trim(),
           password: formData.password
         }),
+        credentials: 'include' // Add this for cookies if needed
       });
   
       const data = await response.json();
   
       if (!response.ok) {
+        // Handle specific error cases from backend
+        if (data.status === 'error') {
+          const newErrors: FormErrors = {};
+          
+          if (data.details) {
+            // Map backend validation errors to form fields
+            Object.entries(data.details).forEach(([key, value]) => {
+              if (value) {
+                newErrors[key as keyof FormErrors] = value as string;
+              }
+            });
+          }
+          
+          setErrors(newErrors);
+          throw new Error(data.message);
+        }
         throw new Error(data.message || 'Registration failed');
       }
   
-      // On successful registration, redirect to login with success message
+      // Clear form data on success
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+  
+      // Successful registration
       navigate('/login', { 
-        replace: true, // Replace current history entry
+        replace: true,
         state: { 
-          message: 'Registration successful! Please login with your credentials.' 
+          success: true,
+          message: 'Registration successful! Please login with your credentials.'
         } 
       });
       
     } catch (error) {
+      console.error('Signup error:', error);
       setErrors(prev => ({ 
         ...prev,
         submit: error instanceof Error ? error.message : 'Registration failed'
@@ -99,6 +143,7 @@ const SignUpPage = () => {
   };
 
   return (
+    
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="text-center text-3xl font-bold text-gray-900">
@@ -208,6 +253,7 @@ const SignUpPage = () => {
                   <a href="/login" className="font-medium text-teal-600 hover:text-teal-500">
                     Login
                   </a>
+                  
                 </span>
               </div>
             </div>

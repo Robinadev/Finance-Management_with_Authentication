@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 interface LoginFormData {
@@ -15,14 +15,24 @@ interface LoginFormErrors {
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const message = location.state?.message;
+  const successMessage = location.state?.success && location.state?.message;
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
-    password: '',
+    password: ''
   });
+
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        navigate('.', { state: {}, replace: true });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, navigate]);
 
   const validateForm = (): boolean => {
     const newErrors: LoginFormErrors = {};
@@ -30,13 +40,13 @@ const Login = () => {
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Please enter a valid email address';
     }
-
+  
     if (!formData.password) {
       newErrors.password = 'Password is required';
     }
-
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -50,35 +60,49 @@ const Login = () => {
     setErrors({});
   
     try {
-      const response = await fetch('/api/auth/login', { // Remove http://localhost:3000
+      const response = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email.toLowerCase().trim(),
+          password: formData.password
+        }),
+        credentials: 'include'
       });
-  
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data?.message || 'Login failed');
-      }
   
       const data = await response.json();
   
+      if (!response.ok) {
+        if (data.status === 'error') {
+          const newErrors: LoginFormErrors = {};
+          if (data.details) {
+            Object.entries(data.details).forEach(([key, value]) => {
+              if (value) {
+                newErrors[key as keyof LoginFormErrors] = value as string;
+              }
+            });
+            setErrors(newErrors);
+          }
+          throw new Error(data.message);
+        }
+        throw new Error(data.message || 'Login failed');
+      }
+  
       if (data.token) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard', { replace: true });
       } else {
-        throw new Error('No token received');
+        throw new Error('Authentication failed');
       }
       
     } catch (error) {
       console.error('Login error:', error);
       setErrors(prev => ({ 
         ...prev,
-        submit: error instanceof Error 
-          ? error.message 
-          : 'Network error. Please check your connection and try again.'
+        submit: error instanceof Error ? error.message : 'Login failed'
       }));
     } finally {
       setIsLoading(false);
@@ -93,17 +117,32 @@ const Login = () => {
         </h2>
       </div>
 
+      {successMessage && (
+        <div className="mb-4 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="rounded-md bg-green-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {message && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{message}</p>
-            </div>
-          )}
-
           {errors.submit && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{errors.submit}</p>
+            <div className="mb-4 rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-red-800">{errors.submit}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -117,6 +156,7 @@ const Login = () => {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
                   value={formData.email}
@@ -137,6 +177,7 @@ const Login = () => {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
                   value={formData.password}
@@ -145,26 +186,6 @@ const Login = () => {
                 {errors.password && (
                   <p className="mt-2 text-sm text-red-600">{errors.password}</p>
                 )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link to="/forgot-password" className="font-medium text-teal-600 hover:text-teal-500">
-                  Forgot your password?
-                </Link>
               </div>
             </div>
 
