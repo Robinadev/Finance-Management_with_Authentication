@@ -48,28 +48,30 @@ const AddTransactionForm = ({ onSubmit }: AddTransactionFormProps) => {
     setIsLoading(true);
   
     try {
-      // Convert amount to number and handle negative values
       const amountValue = parseFloat(formData.amount);
-      
-      await onSubmit({
+      const transaction = {
         description: formData.description.trim(),
         amount: amountValue,
-        date: formData.date
-      });
+        date: formData.date,
+      };
+      console.log('Form data submitted:', transaction); // Debug log
+  
+      await onSubmit(transaction);
   
       // Reset form on success
       setFormData({
         description: '',
         amount: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
       });
     } catch (err) {
+      console.error('Error in AddTransactionForm:', err);
       setError(err instanceof Error ? err.message : 'Failed to add transaction');
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-medium text-gray-900 mb-4">

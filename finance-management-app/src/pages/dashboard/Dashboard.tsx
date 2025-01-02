@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BalanceWidget from '../../components/BalanceWidget'
+import BalanceWidget from '../../components/BalanceWidget';
 import TransactionsList from '../../components/Transactions';
 import AddTransactionForm from '../../components/AddTransctionForm';
 
@@ -17,88 +17,86 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialDeposit, setInitialDeposit] = useState<string>(''); // For initial balance input
+
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Clear the token
+    navigate('/login', { replace: true }); // Redirect to login
+  };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        navigate('/login', { replace: true });
-        return;
-      }
-  
-      setIsLoading(true);
-  
-      const response = await fetch('/api/dashboard', { // Remove http://localhost:3000
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login', { replace: true });
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
           return;
         }
-        throw new Error('Failed to fetch dashboard data');
+
+        const response = await fetch('http://localhost:3000/api/dashboard', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate('/login');
+          }
+          throw new Error('Failed to fetch dashboard data');
+        }
+
+        const data = await response.json();
+        setBalance(data.balance);
+        setTransactions(data.transactions);
+      } catch (err) {
+        setError( 'An unexpected error occurred');
       }
-      
-      const data = await response.json();
-      setBalance(data.balance);
-      setTransactions(data.transactions);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      finally
+      {
+        setIsLoading(false)
+      }
+    };
+
+    fetchDashboardData();
+  }, [navigate]);
 
   const handleNewTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     try {
       const token = localStorage.getItem('token');
-      
       if (!token) {
         navigate('/login', { replace: true });
         return;
       }
-  
-      const response = await fetch('/api/transactions', {
+
+      const response = await fetch('http://localhost:3000/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(transaction)
+        body: JSON.stringify(transaction),
       });
-  
+
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login', { replace: true });
-          return;
-        }
         const data = await response.json();
         throw new Error(data.message || 'Failed to add transaction');
       }
-  
-      // Immediately update the transactions list with the new transaction
+
       const data = await response.json();
-      setTransactions(prevTransactions => [data, ...prevTransactions]);
-      
-      // Update the balance
-      setBalance(prevBalance => prevBalance + transaction.amount);
-      
-    } catch (error) {
-      console.error('Error adding transaction:', error);
-      throw error;
+      setTransactions((prev) => [data, ...prev]);
+      setBalance((prevBalance) => prevBalance + transaction.amount);
+    } catch (err) {
+      console.error('Error adding transaction:', err);
+      setError('Failed to add transaction. Please try again.');
+    }
+  };
+
+  const handleDeposit = () => {
+    const amount = parseFloat(initialDeposit);
+    if (!isNaN(amount) && amount > 0) {
+      setBalance((prev) => prev + amount);
+      setInitialDeposit('');
+    } else {
+      setError('Please enter a valid deposit amount.');
     }
   };
 
@@ -113,31 +111,48 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Financial Dashboard
-        </h1>
-        
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Financial Dashboard</h1>
+
         {error && (
           <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-600">{error}</p>
+            <button
+            onClick={handleLogout}
+            className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Logout
+          </button>
           </div>
         )}
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column */}
           <div className="lg:col-span-2 space-y-8">
             <BalanceWidget balance={balance} />
-            <TransactionsList 
-              transactions={transactions} 
-              isLoading={isLoading} 
-            />
+            <div className="mb-4">
+              <h2 className="text-lg font-medium text-gray-900">Deposit Initial Balance</h2>
+              <div className="flex mt-2">
+                <input
+                  type="text"
+                  value={initialDeposit}
+                  onChange={(e) => setInitialDeposit(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="Enter initial balance"
+                />
+                <button
+                  onClick={handleDeposit}
+                  className="ml-2 px-4 py-2 bg-teal-600 text-white rounded-md shadow-sm hover:bg-teal-700"
+                >
+                  Deposit
+                </button>
+              </div>
+            </div>
+            <TransactionsList transactions={transactions} isLoading={isLoading} />
           </div>
-          
+
           {/* Right column */}
           <div className="lg:col-span-1">
-            <AddTransactionForm 
-              onSubmit={handleNewTransaction} 
-            />
+            <AddTransactionForm onSubmit={handleNewTransaction} />
           </div>
         </div>
       </div>

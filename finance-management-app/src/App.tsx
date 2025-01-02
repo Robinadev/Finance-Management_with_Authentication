@@ -1,31 +1,24 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+//import { ChakraProvider } from "@chakra-ui/react";
 import LandingPage from "./pages/LandingPage";
-import SignUp from "./pages/auth/SignUp";
-import Login from "./pages/auth/Login";
-import Dashboard from "./components/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
-import SignUpPage1 from './pages/auth/SignUp1';
 import './styles/index.css';
-
-const App = () => {
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './pages/auth/Login';
+import SignUpPage from "./pages/auth/SignUp";
+import Dashboard from './components/Dashboard';
+import SignUpPage1 from "./pages/auth/SignUp1";
+function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/signup" element={<SignUpPage1 />} />
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/signup1" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-    </Router>
+     <Router>
+     <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/signup1" element={<SignUpPage1 />} />
+       <Route path="/login" element={<Login />} />
+       <Route path="/dashboard" element={<Dashboard />} />
+       
+     </Routes>
+   </Router>
   );
-};
+}
 
 export default App;

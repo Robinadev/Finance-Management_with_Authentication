@@ -32,7 +32,7 @@ const Login = () => {
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [successMessage, navigate]);
+  }, [successMessage, navigate, location.pathname]);
 
   const validateForm = (): boolean => {
     const newErrors: LoginFormErrors = {};
@@ -45,70 +45,62 @@ const Login = () => {
   
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    }
+    } 
   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+ 
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-  
     setIsLoading(true);
     setErrors({});
-  
+    if (!validateForm()) {
+
+    setIsLoading(false);
+    setErrors({});
+    }
     try {
+     // const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api/auth/login';
+
       const response = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password
-        }),
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
         credentials: 'include'
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
-        if (data.status === 'error') {
-          const newErrors: LoginFormErrors = {};
-          if (data.details) {
-            Object.entries(data.details).forEach(([key, value]) => {
-              if (value) {
-                newErrors[key as keyof LoginFormErrors] = value as string;
-              }
-            });
-            setErrors(newErrors);
-          }
-          throw new Error(data.message);
+        const newErrors: LoginFormErrors = {};
+        if (data.status === 'error' && data.details) {
+          Object.entries(data.details).forEach(([key, value]) => {
+            if (value) {
+              newErrors[key as keyof LoginFormErrors] = value as string;
+            }
+          });
         }
-        throw new Error(data.message || 'Login failed');
+        setErrors(newErrors);
+        throw new Error('Login failed. Please check your credentials.');
       }
-  
-      if (data.token) {
+
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard', { replace: true });
-      } else {
-        throw new Error('Authentication failed');
-      }
-      
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
-      setErrors(prev => ({ 
+      setErrors(prev => ({
         ...prev,
-        submit: error instanceof Error ? error.message : 'Login failed'
+        submit: error instanceof Error ? error.message : 'An unexpected error occurred'
       }));
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
