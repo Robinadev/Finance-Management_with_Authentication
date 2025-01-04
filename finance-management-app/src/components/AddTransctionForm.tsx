@@ -6,6 +6,7 @@ interface TransactionFormData {
   date: string;
 }
 
+
 interface AddTransactionFormProps {
   onSubmit: (transaction: { description: string; amount: number; date: string }) => Promise<void>;
 }
@@ -38,6 +39,7 @@ const AddTransactionForm = ({ onSubmit }: AddTransactionFormProps) => {
 
     return true;
   };
+  
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,6 +55,8 @@ const AddTransactionForm = ({ onSubmit }: AddTransactionFormProps) => {
         description: formData.description.trim(),
         amount: amountValue,
         date: formData.date,
+        type: 'income',
+        category: 'General',
       };
       console.log('Form data submitted:', transaction); // Debug log
   

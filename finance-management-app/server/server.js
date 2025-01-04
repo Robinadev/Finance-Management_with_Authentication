@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv-safe');
 const winston = require('winston');
-const sanitize = require('mongo-sanitize');
+//const sanitize = require('mongo-sanitize');
 
 // Load environment variables
 dotenv.config();
@@ -27,9 +27,11 @@ const { MONGODB_URI, JWT_SECRET, CLIENT_URL, NODE_ENV } = process.env;
 
 // MongoDB connection
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
+  .then(() => logger.info('Connected to MongoDB'))
+  .catch(err => {
+    logger.error('MongoDB connection error:', err);
+    process.exit(1); // Exit the process with failure
+  });
 // User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -241,44 +243,54 @@ app.post('/api/auth/login', async (req, res) => {
 });
 const validateTransaction = (transaction) => {
   const { description, amount, date, type } = transaction;
-  if (!description || !amount || !date || !type) {
-    return 'All fields are required';
-  }
-  if (typeof amount !== 'number' || amount <= 0) {
-    return 'Amount must be a positive number';
-  }
+  if (!description || typeof description !== 'string') return 'Description is required.';
+  if (!amount || typeof amount !== 'number') return 'Valid amount is required.';
+  if (!date || isNaN(Date.parse(date))) return 'Valid date is required.';
+  if (!type || !['income', 'expense'].includes(type)) return 'Type must be "income" or "expense".';
   return null;
 };
 
+
+// Transaction routes
 // Transaction routes
 app.post('/api/transactions', authenticateToken, async (req, res) => {
   try {
-    const transaction = sanitize(req.body);
-    const validationError = validateTransaction(transaction);
+    const { description, amount, date, category, type } = req.body;
+    
+    const validationError = validateTransaction({ description, amount, date, type });
     if (validationError) {
       return res.status(400).json({ message: validationError });
     }
 
-    const newTransaction = new Transaction({ ...transaction, userId: req.user.id });
-    await newTransaction.save();
-    res.status(201).json(newTransaction);
+    const transaction = new Transaction({
+      userId: req.user.id,
+      description,
+      amount,
+      date: new Date(date),
+      category: category || 'General',
+      type: type || 'income',
+    });
+
+    await transaction.save();
+    res.status(201).json(transaction);
   } catch (error) {
     logger.error('Transaction creation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-app.get('/api/transactions', authenticateToken, async (req, res) => {
-  try {
-    const transactions = await Transaction.find({ userId: req.user.id })
-      .sort({ date: -1 })
-      .limit(parseInt(req.query.limit) || 10);
 
-    res.json({ transactions });
-  } catch (error) {
-    console.error('Transaction fetch error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+app.get('/api/transactions', authenticateToken, async (req, res) => {
+   try {
+     const transactions = await Transaction.find({ userId: req.user.id })
+       .sort({ date: -1 })
+       .limit(parseInt(req.query.limit) || 10);
+
+     res.json({ transactions });
+   } catch (error) {
+     console.error('Transaction fetch error:', error);
+     res.status(500).json({ message: 'Server error' });
+   }
+ });
 
 // Dashboard route
 app.get('/api/dashboard', authenticateToken, async (req, res) => {

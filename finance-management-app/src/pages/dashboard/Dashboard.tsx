@@ -1,8 +1,11 @@
+// Updated Dashboard.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+//import { Chart } from 'react-charts';
 import BalanceWidget from '../../components/BalanceWidget';
 import TransactionsList from '../../components/Transactions';
 import AddTransactionForm from '../../components/AddTransctionForm';
+import Toast from '../../components/Toast'
 
 interface Transaction {
   id: string;
@@ -11,17 +14,18 @@ interface Transaction {
   date: string;
 }
 
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initialDeposit, setInitialDeposit] = useState<string>(''); // For initial balance input
+  const [initialDeposit, setInitialDeposit] = useState<string>('');
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Clear the token
-    navigate('/login', { replace: true }); // Redirect to login
+    localStorage.removeItem('token');
+    navigate('/login', { replace: true });
   };
 
   useEffect(() => {
@@ -48,11 +52,9 @@ const Dashboard = () => {
         setBalance(data.balance);
         setTransactions(data.transactions);
       } catch (err) {
-        setError( 'An unexpected error occurred');
-      }
-      finally
-      {
-        setIsLoading(false)
+        setError('An unexpected error occurred');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -85,7 +87,6 @@ const Dashboard = () => {
       setTransactions((prev) => [data, ...prev]);
       setBalance((prevBalance) => prevBalance + transaction.amount);
     } catch (err) {
-      console.error('Error adding transaction:', err);
       setError('Failed to add transaction. Please try again.');
     }
   };
@@ -108,53 +109,47 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Financial Dashboard</h1>
+  const data = [
+    {
+      label: 'Balance',
+      data: transactions.map((txn, index) => [index, txn.amount]),
+    },
+  ];
 
-        {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-            <button
+  const series = {
+    type: 'bar',
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+     { <Toast message={error} onClose={() => setError(null)} /> }
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-4xl font-bold text-indigo-900">Dashboard</h1>
+          <button
             onClick={handleLogout}
-            className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-md shadow-md hover:from-teal-600 hover:to-cyan-700"
           >
             Logout
           </button>
-          </div>
-        )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column */}
-          <div className="lg:col-span-2 space-y-8">
-            <BalanceWidget balance={balance} />
-            <div className="mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Deposit Initial Balance</h2>
-              <div className="flex mt-2">
-                <input
-                  type="text"
-                  value={initialDeposit}
-                  onChange={(e) => setInitialDeposit(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter initial balance"
-                />
-                <button
-                  onClick={handleDeposit}
-                  className="ml-2 px-4 py-2 bg-teal-600 text-white rounded-md shadow-sm hover:bg-teal-700"
-                >
-                  Deposit
-                </button>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <BalanceWidget balance={balance} />
+          <div className="col-span-2 bg-white p-6 shadow-md rounded-lg">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Transactions Overview</h2>
+            <div style={{ height: '300px' }}>
+           {/* //   <Chart data={data} series={series} axes={[
+                { primary: true, type: 'linear', position: 'bottom' },
+                { type: 'linear', position: 'left' },
+              ]} /> */}
             </div>
-            <TransactionsList transactions={transactions} isLoading={isLoading} />
-          </div>
-
-          {/* Right column */}
-          <div className="lg:col-span-1">
-            <AddTransactionForm onSubmit={handleNewTransaction} />
           </div>
         </div>
+
+        <TransactionsList transactions={transactions} />
+        <AddTransactionForm onSubmit={handleNewTransaction} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 
 interface FormData {
   username: string;
@@ -70,7 +71,6 @@ const SignUpPage = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/auth/signup', formData);
       navigate('/login', { state: { success: true, message: 'Sign up successful. Please log in.' } });
-    
     } catch (error) {
       console.error('Error during signup:', error);
       setErrors((prev) => ({ ...prev, submit: 'An unexpected error occurred. Please try again.' }));
@@ -80,63 +80,89 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex flex-col justify-center py-12 px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-bold text-gray-900">Create your account</h2>
+        <h2 className="text-center text-4xl font-extrabold text-indigo-900">Join Our Community</h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Or{' '}
+          <Link to="/login" className="font-medium text-teal-600 hover:text-teal-500">
+            sign in to your account
+          </Link>
+        </p>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Username Field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-              <input
-                id="username"
-                type="text"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:ring-teal-500 focus:border-teal-500"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              />
-              {errors.username && <p className="text-red-600 text-sm">{errors.username}</p>}
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="text-gray-400" />
+                </div>
+                <input
+                  id="username"
+                  type="text"
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                />
+              </div>
+              {errors.username && <p className="mt-2 text-sm text-red-600">{errors.username}</p>}
             </div>
 
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email address</label>
-              <input
-                id="email"
-                type="email"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:ring-teal-500 focus:border-teal-500"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-              {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaEnvelope className="text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+              {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
             </div>
 
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="password"
-                type="password"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:ring-teal-500 focus:border-teal-500"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+              {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password}</p>}
             </div>
 
             {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:ring-teal-500 focus:border-teal-500"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              />
-              {errors.confirmPassword && <p className="text-red-600 text-sm">{errors.confirmPassword}</p>}
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="text-gray-400" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                />
+              </div>
+              {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
             </div>
 
             {/* Submit Button */}
@@ -144,18 +170,14 @@ const SignUpPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-500 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50"
               >
                 {isLoading ? 'Signing up...' : 'Sign up'}
               </button>
             </div>
 
-            {errors.submit && <p className="text-red-600 text-sm text-center">{errors.submit}</p>}
+            {errors.submit && <p className="mt-4 text-sm text-center text-red-600">{errors.submit}</p>}
           </form>
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-teal-600 hover:text-teal-500">Login</Link>
-          </p>
         </div>
       </div>
     </div>

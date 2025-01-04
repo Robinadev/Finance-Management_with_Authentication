@@ -55,36 +55,41 @@ const Dashboard = () => {
 },[navigate]);
 
   
-  const handleNewTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login', { replace: true });
-        return;
-      }
+const handleNewTransaction = async (transaction: any) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login', { replace: true });
+      return;
+    }
 
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(transaction),
-      });
+    const response = await fetch('http://localhost:3000/api/transactions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...transaction, type: 'income', category: 'General' }), // Add type and category
+    });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to add transaction');
-      }
-
+    if (!response.ok) {
       const data = await response.json();
-      setTransactions((prev) => [data, ...prev]);
-      setBalance((prevBalance) => prevBalance + transaction.amount);
-    } catch (err) {
-      console.error('Error adding transaction:', err);
+      throw new Error(data.message || 'Failed to add transaction');
+    }
+
+    const data = await response.json();
+    setTransactions((prev) => [data, ...prev]);
+    setBalance((prev) => prev + data.amount);
+  } catch (err) {
+    console.error('Error adding transaction:', err);
+    if (err instanceof Error) {
+      setError(err.message || 'Failed to add transaction. Please try again.');
+    } else {
       setError('Failed to add transaction. Please try again.');
     }
-  };
+  }
+};
+
 
   const handleDeposit = () => {
     const amount = parseFloat(initialDeposit);
